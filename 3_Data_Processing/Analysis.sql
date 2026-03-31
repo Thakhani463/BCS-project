@@ -89,94 +89,72 @@ GROUP BY
 ORDER BY transaction_date;
 
 -- =========================================
--- OBJECTIVE QUERIES
+-- FINAL SQL QUERY FOR ANALYSIS
 -- =========================================
-
--- 13. Total revenue
 SELECT
-    ROUND(SUM(transaction_qty * unit_price), 2) AS total_revenue
-FROM case_study.default.bcs_analysis;
+    -- Dates
+    transaction_date AS purchase_date,
+    dayname(transaction_date) AS Day_name,
+    monthname(transaction_date) AS Month_name,
+    dayofmonth(transaction_date) AS day_of_month,
 
--- 14. Revenue by product type
-SELECT
-    product_type,
-    ROUND(SUM(transaction_qty * unit_price), 2) AS total_revenue
-FROM case_study.default.bcs_analysis
-GROUP BY product_type
-ORDER BY total_revenue DESC;
-
--- 15. Best and worst products
-SELECT
-    product_detail,
-    SUM(transaction_qty) AS total_units_sold,
-    ROUND(SUM(transaction_qty * unit_price), 2) AS total_revenue
-FROM case_study.default.bcs_analysis
-GROUP BY product_detail
-ORDER BY total_revenue DESC;
-
--- 16. Peak sales time
-SELECT
+    -- Day classification
     CASE
-        WHEN HOUR(transaction_time) >= 6 AND HOUR(transaction_time) < 10 THEN 'Morning Rush'
-        WHEN HOUR(transaction_time) >= 10 AND HOUR(transaction_time) < 12 THEN 'Lunch'
-        WHEN HOUR(transaction_time) >= 12 AND HOUR(transaction_time) < 17 THEN 'Day'
-        WHEN HOUR(transaction_time) >= 17 THEN 'Evening'
-        ELSE 'Other'
-    END AS transaction_time_bucket,
-    ROUND(SUM(transaction_qty * unit_price), 2) AS total_revenue
-FROM case_study.default.bcs_analysis
-GROUP BY
-    CASE
-        WHEN HOUR(transaction_time) >= 6 AND HOUR(transaction_time) < 10 THEN 'Morning Rush'
-        WHEN HOUR(transaction_time) >= 10 AND HOUR(transaction_time) < 12 THEN 'Lunch'
-        WHEN HOUR(transaction_time) >= 12 AND HOUR(transaction_time) < 17 THEN 'Day'
-        WHEN HOUR(transaction_time) >= 17 THEN 'Evening'
-        ELSE 'Other'
-    END
-ORDER BY total_revenue DESC;
+        WHEN dayname(transaction_date) IN ('Sun', 'Sat') THEN 'Weekend'
+        ELSE 'Weekday'
+    END AS day_classification,
 
--- 17. Revenue by product type and time bucket
-SELECT
-    product_type,
-    CASE
-        WHEN HOUR(transaction_time) >= 6 AND HOUR(transaction_time) < 10 THEN 'Morning Rush'
-        WHEN HOUR(transaction_time) >= 10 AND HOUR(transaction_time) < 12 THEN 'Lunch'
-        WHEN HOUR(transaction_time) >= 12 AND HOUR(transaction_time) < 17 THEN 'Day'
-        WHEN HOUR(transaction_time) >= 17 THEN 'Evening'
-        ELSE 'Other'
-    END AS transaction_time_bucket,
-    ROUND(SUM(transaction_qty * unit_price), 2) AS total_revenue
-FROM case_study.default.bcs_analysis
-GROUP BY
-    product_type,
-    CASE
-        WHEN HOUR(transaction_time) >= 6 AND HOUR(transaction_time) < 10 THEN 'Morning Rush'
-        WHEN HOUR(transaction_time) >= 10 AND HOUR(transaction_time) < 12 THEN 'Lunch'
-        WHEN HOUR(transaction_time) >= 12 AND HOUR(transaction_time) < 17 THEN 'Day'
-        WHEN HOUR(transaction_time) >= 17 THEN 'Evening'
-        ELSE 'Other'
-    END
-ORDER BY product_type, total_revenue DESC;
+    -- Time
+    date_format(transaction_time, 'HH:mm:ss') AS purchase_time,
 
--- 18. Revenue by product category and time bucket
-SELECT
+    CASE
+        WHEN date_format(transaction_time, 'HH:mm:ss') BETWEEN '00:00:00' AND '11:59:59' THEN '01. Morning'
+        WHEN date_format(transaction_time, 'HH:mm:ss') BETWEEN '12:00:00' AND '16:59:59' THEN '02. Afternoon'
+        WHEN date_format(transaction_time, 'HH:mm:ss') >= '17:00:00' THEN '03. Evening'
+    END AS time_buckets,
+
+    -- Counts
+    COUNT(DISTINCT transaction_id) AS Number_of_sales,
+    COUNT(DISTINCT product_id) AS number_of_products,
+    COUNT(DISTINCT store_id) AS number_of_stores,
+
+    -- Revenue
+    SUM(transaction_qty * unit_price) AS revenue_per_day,
+    SUM(transaction_qty) AS total_quantity,
+
+    -- Spend bucket 
+    CASE
+        WHEN SUM(transaction_qty * unit_price) <= 50 THEN '01. Low Spend'
+        WHEN SUM(transaction_qty * unit_price) BETWEEN 51 AND 100 THEN '02. Med Spend'
+        ELSE '03. High Spend'
+    END AS spend_bucket,
+
+    -- Categorical columns
+    store_location,
     product_category,
-    CASE
-        WHEN HOUR(transaction_time) >= 6 AND HOUR(transaction_time) < 10 THEN 'Morning Rush'
-        WHEN HOUR(transaction_time) >= 10 AND HOUR(transaction_time) < 12 THEN 'Lunch'
-        WHEN HOUR(transaction_time) >= 12 AND HOUR(transaction_time) < 17 THEN 'Day'
-        WHEN HOUR(transaction_time) >= 17 THEN 'Evening'
-        ELSE 'Other'
-    END AS transaction_time_bucket,
-    ROUND(SUM(transaction_qty * unit_price), 2) AS total_revenue
+    product_detail
+
 FROM case_study.default.bcs_analysis
+
 GROUP BY
-    product_category,
+    transaction_date,
+    dayname(transaction_date),
+    monthname(transaction_date),
+    dayofmonth(transaction_date),
+
     CASE
-        WHEN HOUR(transaction_time) >= 6 AND HOUR(transaction_time) < 10 THEN 'Morning Rush'
-        WHEN HOUR(transaction_time) >= 10 AND HOUR(transaction_time) < 12 THEN 'Lunch'
-        WHEN HOUR(transaction_time) >= 12 AND HOUR(transaction_time) < 17 THEN 'Day'
-        WHEN HOUR(transaction_time) >= 17 THEN 'Evening'
-        ELSE 'Other'
-    END
-ORDER BY product_category, total_revenue DESC;
+        WHEN dayname(transaction_date) IN ('Sun', 'Sat') THEN 'Weekend'
+        ELSE 'Weekday'
+    END,
+
+    date_format(transaction_time, 'HH:mm:ss'),
+
+    CASE
+        WHEN date_format(transaction_time, 'HH:mm:ss') BETWEEN '00:00:00' AND '11:59:59' THEN '01. Morning'
+        WHEN date_format(transaction_time, 'HH:mm:ss') BETWEEN '12:00:00' AND '16:59:59' THEN '02. Afternoon'
+        WHEN date_format(transaction_time, 'HH:mm:ss') >= '17:00:00' THEN '03. Evening'
+    END,
+
+    store_location,
+    product_category,
+    product_detail;
