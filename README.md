@@ -53,5 +53,5 @@ Some products showed very low performance and may require review
 Miro - Planning for project
 Databricks (SQL) – data processing and transformation
 Excel – pivot tables and analysis
- Canva – presentation
+ Presentation – presentation
 GitHub – project documentation
