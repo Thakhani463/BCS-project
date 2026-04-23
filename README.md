@@ -55,3 +55,4 @@ Databricks (SQL) – data processing and transformation
 Excel – pivot tables and analysis
  Presentation – microsoft powerpoint
 GitHub – project documentation
+Loveble https://bit.ly/41OqLwT
