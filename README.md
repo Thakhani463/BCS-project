@@ -81,7 +81,8 @@ Charts created include:
 - Microsoft PowerPoint – Presentation  
 - GitHub – Project documentation  
 - Lovable – Interactive dashboard  
-  👉 https://bit.ly/41OqLwT  
+  👉 https://bit.ly/41OqLwT
+- Power BI Dashboard
 
 ---
 
